@@ -354,8 +354,16 @@ const verifyHuman = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "not-found" };
     }
 
+    // Re-check protection at verification time (fresh IP velocity)
+    const cfg = await loadProtection();
+    const rateHits = await ipExceedsRate(ip, cfg);
+
     let score = a.score;
     const reasons: string[] = a.reasons ? [a.reasons] : [];
+    if (rateHits > 0) {
+      score += 60;
+      reasons.push(`rate:${rateHits}/${cfg.ip_rate_limit_window_sec}s`);
+    }
     const fp = data.fp;
 
     if (fp.webdriver) { score += 80; reasons.push("webdriver"); }
