@@ -295,14 +295,18 @@ const resolveLink = createServerFn({ method: "POST" })
     const rateHits = await ipExceedsRate(ip, cfg);
     const rateLimited = rateHits > 0;
 
-    // Aggregate suspicion: pre-flag bot OR rate-limited OR over hard threshold
+    // Aggregate suspicion: pre-flag bot OR rate-limited OR over hard threshold OR targeting block
     const suspicious =
-      a.isBot || rateLimited || a.score >= cfg.block_threshold_score;
+      a.isBot || rateLimited || a.score >= cfg.block_threshold_score || targetingCheck.blocked;
 
     const suspicionReasons = [
       a.reasons,
       rateLimited ? `rate:${rateHits}/${cfg.ip_rate_limit_window_sec}s` : "",
+      targetingCheck.blocked ? `target:${targetingCheck.reason}` : "",
     ].filter(Boolean).join(",");
+
+    // Targeting block always shows safe page (never reveals destination)
+    const effectiveAction = targetingCheck.blocked ? "safe_page" : cfg.suspicious_action;
 
     // Hard block path
     if (suspicious && cfg.suspicious_action === "block") {
