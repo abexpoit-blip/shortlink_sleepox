@@ -1,5 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Plus, Copy, ExternalLink, Settings, TrendingUp, TrendingDown,
   Activity, Bot, MousePointerClick, Link2, ArrowUpRight, Search, Bell,
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { getAnalytics } from "@/lib/analytics.functions";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
@@ -20,6 +22,8 @@ export const Route = createFileRoute("/dashboard")({
   },
   component: Dashboard,
 });
+
+type DashboardAnalytics = Awaited<ReturnType<typeof getAnalytics>>;
 
 type LinkRow = {
   id: string;
@@ -35,16 +39,22 @@ function genCode() {
   return Math.random().toString(36).slice(2, 8);
 }
 
-// Generate sparkline points from a seed (visual only)
-function sparklinePath(seed: number, w = 100, h = 28) {
-  const pts = Array.from({ length: 12 }, (_, i) => {
-    const v = Math.sin(seed + i * 0.7) * 0.4 + Math.cos(seed * 1.3 + i * 0.4) * 0.3 + 0.5;
-    return [(i / 11) * w, h - Math.max(0.1, Math.min(0.9, v)) * h];
-  });
-  return pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+function linePath(values: number[], w = 100, h = 28) {
+  if (values.length === 0) return `M0,${h} L${w},${h}`;
+  if (values.length === 1) {
+    const y = values[0] > 0 ? h * 0.35 : h;
+    return `M0,${y.toFixed(1)} L${w},${y.toFixed(1)}`;
+  }
+  const max = Math.max(...values, 1);
+  return values.map((v, i) => {
+    const x = (i / (values.length - 1)) * w;
+    const y = h - (v / max) * (h - 4) - 2;
+    return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
 }
 
 function Dashboard() {
+  const fetchAnalytics = useServerFn(getAnalytics);
   const [links, setLinks] = useState<LinkRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [url, setUrl] = useState("");
@@ -52,6 +62,8 @@ function Dashboard() {
   const [creating, setCreating] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [range, setRange] = useState<"day" | "week" | "month">("week");
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -69,6 +81,13 @@ function Dashboard() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const days = range === "day" ? 1 : range === "week" ? 7 : 30;
+    void fetchAnalytics({ data: { days, linkId: null } })
+      .then(setAnalytics)
+      .catch((error) => toast.error(error instanceof Error ? error.message : "Analytics failed to load"));
+  }, [fetchAnalytics, range]);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +149,11 @@ function Dashboard() {
     () => [...links].sort((a, b) => b.clicks_count - a.clicks_count)[0],
     [links]
   );
+
+  const chartValues = useMemo(() => (analytics?.timeseries ?? []).map((p) => p.humans), [analytics]);
+  const botChartValues = useMemo(() => (analytics?.timeseries ?? []).map((p) => p.bots), [analytics]);
+  const rangeTotals = analytics?.totals ?? { humans: stats.totalClicks, bots: stats.totalBots, total: stats.totalClicks + stats.totalBots, conversionRate: stats.cleanRate / 100 };
+  const rangeLabel = range === "day" ? "Today" : range === "week" ? "7 days" : "30 days";
 
   return (
     <SidebarProvider>
@@ -204,13 +228,17 @@ function Dashboard() {
                         </div>
                         <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Real clicks</span>
                       </div>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
-                        <TrendingUp className="h-3 w-3" /> {stats.cleanRate.toFixed(1)}%
-                      </span>
+                      <div className="flex rounded-lg border border-border/60 bg-background/45 p-0.5">
+                        {(["day", "week", "month"] as const).map((item) => (
+                          <button key={item} type="button" onClick={() => setRange(item)} className={`rounded-md px-2 py-1 text-[10px] font-semibold capitalize transition-colors ${range === item ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                            {item}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div className="mt-6 flex items-baseline gap-2">
-                      <span className="font-display text-5xl font-bold tracking-tight">{stats.totalClicks.toLocaleString()}</span>
-                      <span className="text-sm text-muted-foreground">verified humans</span>
+                      <span className="font-display text-5xl font-bold tracking-tight">{rangeTotals.humans.toLocaleString()}</span>
+                      <span className="text-sm text-muted-foreground">verified humans · {rangeLabel}</span>
                     </div>
                     <div className="mt-6">
                       <svg viewBox="0 0 100 28" className="h-16 w-full" preserveAspectRatio="none">
@@ -220,15 +248,15 @@ function Dashboard() {
                             <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
                           </linearGradient>
                         </defs>
-                        <path d={`${sparklinePath(stats.totalClicks + 1)} L100,28 L0,28 Z`} fill="url(#sparkFill)" />
-                        <path d={sparklinePath(stats.totalClicks + 1)} stroke="var(--color-primary)" strokeWidth="1.5" fill="none" />
+                        <path d={`${linePath(chartValues)} L100,28 L0,28 Z`} fill="url(#sparkFill)" />
+                        <path d={linePath(chartValues)} stroke="var(--color-primary)" strokeWidth="1.5" fill="none" />
                       </svg>
                     </div>
                     <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border/60 pt-4">
                       {[
-                        { label: "Today", value: Math.floor(stats.totalClicks * 0.18) },
-                        { label: "Week", value: Math.floor(stats.totalClicks * 0.62) },
-                        { label: "Month", value: stats.totalClicks },
+                        { label: "Today", value: range === "day" ? rangeTotals.humans : "—" },
+                        { label: "Week", value: range === "week" ? rangeTotals.humans : "—" },
+                        { label: "Month", value: range === "month" ? rangeTotals.humans : "—" },
                       ].map((s) => (
                         <div key={s.label}>
                           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.label}</div>
@@ -250,23 +278,24 @@ function Dashboard() {
                         <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Bots blocked</span>
                       </div>
                       <div className="mt-3 flex items-baseline gap-2">
-                        <span className="font-display text-3xl font-bold">{stats.totalBots.toLocaleString()}</span>
-                        <span className="text-xs text-muted-foreground">requests</span>
+                        <span className="font-display text-3xl font-bold">{rangeTotals.bots.toLocaleString()}</span>
+                        <span className="text-xs text-muted-foreground">requests · {rangeLabel}</span>
                       </div>
                     </div>
                     <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                      <TrendingDown className="h-3 w-3" /> {stats.blockRate.toFixed(1)}%
+                      <TrendingDown className="h-3 w-3" /> {(rangeTotals.total ? (rangeTotals.bots / rangeTotals.total) * 100 : 0).toFixed(1)}%
                     </span>
                   </div>
                   <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-destructive to-warning transition-all"
-                      style={{ width: `${Math.min(100, stats.blockRate)}%` }}
+                      style={{ width: `${Math.min(100, rangeTotals.total ? (rangeTotals.bots / rangeTotals.total) * 100 : 0)}%` }}
                     />
                   </div>
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    Datacenter IPs, headless browsers & click farms auto-filtered.
-                  </p>
+                  <svg viewBox="0 0 100 28" className="mt-4 h-10 w-full" preserveAspectRatio="none">
+                    <path d={linePath(botChartValues)} stroke="var(--color-destructive)" strokeWidth="1.5" fill="none" />
+                  </svg>
+                  <p className="mt-2 text-[11px] text-muted-foreground">Database-backed bot blocks for the selected period.</p>
                 </div>
 
                 {/* Total links */}
