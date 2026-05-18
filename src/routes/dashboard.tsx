@@ -736,6 +736,67 @@ function Dashboard() {
           </main>
         </div>
       </div>
+
+      {/* Active Links drill-down dialog */}
+      <Dialog open={linksDialogOpen} onOpenChange={setLinksDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display">Active Links · {links.length}</DialogTitle>
+            <DialogDescription>
+              Pick a link to drill into its full analytics, clicks, and bot-filter timeline.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto -mx-2 px-2">
+            {links.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">No links yet. Create one below.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {links.map((l) => {
+                  const total = l.clicks_count + l.bot_clicks_count;
+                  const cleanPct = total > 0 ? (l.clicks_count / total) * 100 : 100;
+                  return (
+                    <button
+                      key={l.id}
+                      onClick={() => {
+                        setLinksDialogOpen(false);
+                        goToLinkAnalytics(l.id);
+                      }}
+                      className="w-full rounded-xl border border-border bg-card-gradient p-3 text-left transition-all hover:border-primary/40 hover:shadow-card"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+                              /r/{l.short_code}
+                            </span>
+                            {l.title && <span className="truncate text-sm font-medium">{l.title}</span>}
+                          </div>
+                          <div className="mt-1 truncate text-xs text-muted-foreground">{l.destination_url}</div>
+                        </div>
+                        <div className="flex items-center gap-4 text-right">
+                          <div>
+                            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Real</div>
+                            <div className="font-mono text-sm font-bold text-success">{l.clicks_count}</div>
+                          </div>
+                          <div>
+                            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Bots</div>
+                            <div className="font-mono text-sm font-bold text-destructive">{l.bot_clicks_count}</div>
+                          </div>
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                      <div className="mt-2 flex h-1 overflow-hidden rounded-full bg-secondary">
+                        <div className="bg-success" style={{ width: `${cleanPct}%` }} />
+                        <div className="bg-destructive" style={{ width: `${100 - cleanPct}%` }} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   );
 }
