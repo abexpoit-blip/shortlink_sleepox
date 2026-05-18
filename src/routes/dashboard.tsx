@@ -515,8 +515,13 @@ function Dashboard() {
                   <div className="mt-1 text-xs text-muted-foreground">Total campaigns in rotation</div>
                 </div>
 
-                <div className="relative overflow-hidden rounded-2xl border border-border p-5 shadow-card"
-                     style={{ background: "linear-gradient(135deg, oklch(0.97 0.04 295), oklch(1 0 0))" }}>
+                <div
+                  className={`relative overflow-hidden rounded-2xl border border-border p-5 shadow-card transition-all ${topLink ? "cursor-pointer hover:border-primary/40 hover:shadow-glow" : "opacity-80"}`}
+                  style={{ background: "linear-gradient(135deg, oklch(0.97 0.04 295), oklch(1 0 0))" }}
+                  role={topLink ? "button" : undefined}
+                  tabIndex={topLink ? 0 : -1}
+                  onClick={() => topLink && goToLinkAnalytics(topLink.id)}
+                >
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
                     <Sparkles className="h-3.5 w-3.5" /> Top performer
                   </div>
