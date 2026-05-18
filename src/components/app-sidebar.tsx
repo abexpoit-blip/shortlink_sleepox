@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Shield, LayoutDashboard, BarChart3, Trophy, ShieldCheck, Settings,
-  GitBranch, Sparkles, LogOut,
+  GitBranch, Sparkles, LogOut, Globe2,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -15,6 +15,7 @@ const mainNav = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Funnel", url: "/funnel", icon: GitBranch },
+  { title: "Domains", url: "/domains", icon: Globe2 },
 ];
 
 const adminNav = [
