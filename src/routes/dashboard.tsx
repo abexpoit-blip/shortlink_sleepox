@@ -319,8 +319,14 @@ function Dashboard() {
               {/* Bento metrics — v3 Luminous Glass Layers */}
               <div className="grid gap-4 lg:grid-cols-3">
                 {/* HERO: Conversion Rate (big violet gradient card) */}
-                <div className="lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-3xl p-8 text-primary-foreground shadow-elegant"
-                     style={{ background: "var(--gradient-primary)" }}>
+                <div
+                  className="lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-3xl p-8 text-primary-foreground shadow-elegant cursor-pointer transition-transform hover:scale-[1.005]"
+                  style={{ background: "var(--gradient-primary)" }}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate({ to: "/analytics" })}
+                  onKeyDown={(e) => { if (e.key === "Enter") void navigate({ to: "/analytics" }); }}
+                >
                   {/* Decorative glows */}
                   <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
                   <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
