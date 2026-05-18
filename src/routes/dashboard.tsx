@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Shield, Plus, Copy, ExternalLink, LogOut, BarChart3, Settings } from "lucide-react";
+import { Shield, Plus, Copy, ExternalLink, LogOut, BarChart3, Settings, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
