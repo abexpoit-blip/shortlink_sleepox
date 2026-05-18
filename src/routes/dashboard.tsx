@@ -342,12 +342,12 @@ function Dashboard() {
                           Conversion Rate
                         </span>
                       </div>
-                      <div className="flex rounded-xl border border-white/25 bg-white/15 p-0.5 backdrop-blur-sm">
+                      <div className="flex rounded-xl border border-white/25 bg-white/15 p-0.5 backdrop-blur-sm" onClick={(e) => e.stopPropagation()}>
                         {(["day", "week", "month"] as const).map((item) => (
                           <button
                             key={item}
                             type="button"
-                            onClick={() => setRange(item)}
+                            onClick={(e) => { e.stopPropagation(); setRange(item); }}
                             className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold capitalize transition-colors ${range === item ? "bg-white text-primary" : "text-white/80 hover:text-white"}`}
                           >
                             {item}
