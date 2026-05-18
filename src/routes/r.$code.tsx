@@ -94,6 +94,50 @@ function rowToVariant(r: {
   };
 }
 
+// ---------- Protection config + rate limit ----------
+
+type ProtectionConfig = {
+  ip_rate_limit_per_min: number;
+  ip_rate_limit_window_sec: number;
+  suspicious_action: "block" | "safe_page" | "allow";
+  block_threshold_score: number;
+  safe_page_message: string;
+};
+
+const DEFAULT_PROTECTION: ProtectionConfig = {
+  ip_rate_limit_per_min: 30,
+  ip_rate_limit_window_sec: 60,
+  suspicious_action: "safe_page",
+  block_threshold_score: 60,
+  safe_page_message:
+    "This article is temporarily unavailable. Please check back later.",
+};
+
+async function loadProtection(): Promise<ProtectionConfig> {
+  const { data } = await supabaseAdmin
+    .from("bot_protection_config")
+    .select("ip_rate_limit_per_min,ip_rate_limit_window_sec,suspicious_action,block_threshold_score,safe_page_message")
+    .eq("id", 1)
+    .maybeSingle();
+  if (!data) return DEFAULT_PROTECTION;
+  return {
+    ...DEFAULT_PROTECTION,
+    ...data,
+    suspicious_action: (data.suspicious_action as ProtectionConfig["suspicious_action"]) ?? "safe_page",
+  };
+}
+
+async function ipExceedsRate(ip: string, cfg: ProtectionConfig): Promise<number> {
+  if (!ip) return 0;
+  const since = new Date(Date.now() - cfg.ip_rate_limit_window_sec * 1000).toISOString();
+  const { count } = await supabaseAdmin
+    .from("clicks")
+    .select("id", { count: "exact", head: true })
+    .eq("ip_address", ip)
+    .gte("created_at", since);
+  const perMinEquivalent = ((count ?? 0) * 60) / Math.max(1, cfg.ip_rate_limit_window_sec);
+  return perMinEquivalent > cfg.ip_rate_limit_per_min ? count ?? 0 : 0;
+
 // ---------- Server functions ----------
 
 const resolveLink = createServerFn({ method: "POST" })
