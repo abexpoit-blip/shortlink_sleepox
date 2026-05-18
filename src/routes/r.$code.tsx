@@ -137,6 +137,7 @@ async function ipExceedsRate(ip: string, cfg: ProtectionConfig): Promise<number>
     .gte("created_at", since);
   const perMinEquivalent = ((count ?? 0) * 60) / Math.max(1, cfg.ip_rate_limit_window_sec);
   return perMinEquivalent > cfg.ip_rate_limit_per_min ? count ?? 0 : 0;
+}
 
 // ---------- Server functions ----------
 
