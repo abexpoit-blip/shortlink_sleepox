@@ -576,7 +576,14 @@ const verifyHuman = createServerFn({ method: "POST" })
         .eq("id", link.id);
     }
 
-    return { ok: true as const, destination: link.destination_url };
+    // Smart rotator: pick weighted destination if any active rows exist
+    const { data: destRows } = await supabaseAdmin
+      .from("link_destinations")
+      .select("url,weight,is_active")
+      .eq("link_id", link.id);
+    const destination = pickWeightedDestination(destRows ?? [], link.destination_url);
+
+    return { ok: true as const, destination };
   });
 
 // ---------- Route ----------
