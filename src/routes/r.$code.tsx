@@ -5,8 +5,11 @@ import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { parseUA } from "@/lib/ua";
+import {
+  VARIANTS, VARIANT_IDS, pickVariant, type VariantId,
+} from "@/lib/variants";
 
-const PRELANDER_VARIANT = "wellness";
+const VariantSchema = z.enum(VARIANT_IDS as [VariantId, ...VariantId[]]);
 
 // ---------- Server-side helpers ----------
 
