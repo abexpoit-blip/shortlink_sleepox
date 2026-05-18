@@ -26,9 +26,9 @@ import {
 } from "@/lib/domain.functions";
 
 export const Route = createFileRoute("/domains")({
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/login" });
+  beforeLoad: async ({ location }) => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) throw redirect({ to: "/login", search: { redirect: location.href } });
   },
   component: DomainsPage,
 });
@@ -78,6 +78,7 @@ function DomainsPage() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const add = async (e: FormEvent) => {
