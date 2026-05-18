@@ -117,7 +117,7 @@ function LinkSettingsPage() {
     };
     const { error } = await supabase
       .from("links")
-      .update({ targeting: next as unknown as Record<string, unknown> })
+      .update({ targeting: next as never })
       .eq("id", linkId);
     setSaving(false);
     if (error) return toast.error(error.message);
