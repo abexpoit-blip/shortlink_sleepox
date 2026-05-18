@@ -19,7 +19,6 @@ export const getCrossLinkFunnel = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Schema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const since = new Date(Date.now() - data.days * 24 * 3600 * 1000).toISOString();
 
     let linksQ = supabase
       .from("links")
