@@ -154,8 +154,12 @@ function Dashboard() {
     toast.success("Refreshing…");
   };
 
+  const rangeDays = range === "day" ? 1 : range === "week" ? 7 : 30;
   const goToLinkAnalytics = (id: string) => {
-    void navigate({ to: "/analytics/$linkId", params: { linkId: id }, search: { range } });
+    void navigate({ to: "/analytics/$linkId", params: { linkId: id }, search: { days: rangeDays } });
+  };
+  const goToAnalytics = () => {
+    void navigate({ to: "/analytics", search: { days: rangeDays, linkId: "all" } });
   };
 
 
