@@ -91,6 +91,8 @@ function Dashboard() {
   const [search, setSearch] = useState("");
   const [range, setRange] = useState<"day" | "week" | "month">("week");
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshTick, setRefreshTick] = useState(0);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
