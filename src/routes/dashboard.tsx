@@ -21,6 +21,8 @@ import {
   RefreshCw,
   Pause,
   Play,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
