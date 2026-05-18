@@ -174,6 +174,7 @@ const resolveLink = createServerFn({ method: "POST" })
 const verifyHuman = createServerFn({ method: "POST" })
   .inputValidator((input: {
     code: string;
+    variant: VariantId;
     fp: {
       ua: string;
       webdriver: boolean;
@@ -196,6 +197,7 @@ const verifyHuman = createServerFn({ method: "POST" })
   }) =>
     z.object({
       code: z.string().min(1).max(32),
+      variant: VariantSchema,
       fp: z.object({
         ua: z.string().max(500),
         webdriver: z.boolean(),
@@ -288,7 +290,7 @@ const verifyHuman = createServerFn({ method: "POST" })
       device: uaInfo2.device,
       os: uaInfo2.os,
       browser: uaInfo2.browser,
-      variant: PRELANDER_VARIANT,
+      variant: data.variant,
     });
 
     if (isBot) {
