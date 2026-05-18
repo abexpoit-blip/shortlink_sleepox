@@ -277,11 +277,19 @@ const resolveLink = createServerFn({ method: "POST" })
 
     const { data: link } = await supabaseAdmin
       .from("links")
-      .select("id, status")
+      .select("id, status, targeting")
       .eq("short_code", data.code)
       .maybeSingle();
 
     if (!link || link.status !== "active") return { found: false as const };
+
+    // Targeting check (geo/device/lang/time)
+    const uaInfoT = parseUA(a.ua);
+    const targetingCheck = checkTargeting(link.targeting as Targeting | null, {
+      country,
+      device: uaInfoT.device,
+      lang: primaryLang(a.acceptLang),
+    });
 
     // IP velocity check
     const rateHits = await ipExceedsRate(ip, cfg);
