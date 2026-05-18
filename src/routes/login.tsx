@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
-import { Shield, Zap, BarChart3, Bot, Sparkles, ArrowRight } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { Shield, Zap, BarChart3, Bot, Sparkles, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,46 +9,64 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : "/dashboard",
+  }),
   head: () => ({ meta: [{ title: "Sign in — LinkShield" }] }),
   component: LoginPage,
 });
 
 function LoginPage() {
+  const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: redirect });
+    });
+  }, [navigate, redirect]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (loading || googleLoading) return;
+    setErrorMessage(null);
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) {
       setLoading(false);
+      setErrorMessage(error.message);
       return toast.error(error.message);
     }
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
       setLoading(false);
-      return toast.error("Login session was not saved. Please try again.");
+      const message = "Login session was not saved. Please try again.";
+      setErrorMessage(message);
+      return toast.error(message);
     }
     toast.success("Welcome back!");
-    window.location.assign("/dashboard");
+    navigate({ to: redirect });
   };
 
   const onGoogle = async () => {
+    setErrorMessage(null);
     setGoogleLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}${redirect}`,
     });
     if (result.error) {
       setGoogleLoading(false);
+      setErrorMessage(result.error.message ?? "Google sign-in failed");
       toast.error(result.error.message ?? "Google sign-in failed");
       return;
     }
     if (result.redirected) return;
-    window.location.assign("/dashboard");
+    navigate({ to: redirect });
   };
 
   return (
