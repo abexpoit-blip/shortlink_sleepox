@@ -154,6 +154,8 @@ const resolveLink = createServerFn({ method: "POST" })
     const country = getRequestHeader("cf-ipcountry") || null;
     const referer = getRequestHeader("referer") || "";
 
+    const cfg = await loadProtection();
+
     const { data: link } = await supabaseAdmin
       .from("links")
       .select("id, status")
@@ -161,6 +163,67 @@ const resolveLink = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (!link || link.status !== "active") return { found: false as const };
+
+    // IP velocity check
+    const rateHits = await ipExceedsRate(ip, cfg);
+    const rateLimited = rateHits > 0;
+
+    // Aggregate suspicion: pre-flag bot OR rate-limited OR over hard threshold
+    const suspicious =
+      a.isBot || rateLimited || a.score >= cfg.block_threshold_score;
+
+    const suspicionReasons = [
+      a.reasons,
+      rateLimited ? `rate:${rateHits}/${cfg.ip_rate_limit_window_sec}s` : "",
+    ].filter(Boolean).join(",");
+
+    // Hard block path
+    if (suspicious && cfg.suspicious_action === "block") {
+      const uaInfoB = parseUA(a.ua);
+      await supabaseAdmin.from("clicks").insert({
+        link_id: link.id,
+        ip_address: ip || null,
+        country,
+        user_agent: a.ua || null,
+        referer: referer || null,
+        is_bot: true,
+        bot_reason: `blocked:${suspicionReasons}`,
+        device: uaInfoB.device,
+        os: uaInfoB.os,
+        browser: uaInfoB.browser,
+        variant: null,
+      });
+      return {
+        found: true as const,
+        blocked: true as const,
+        safe: false as const,
+        message: cfg.safe_page_message,
+      };
+    }
+
+    // Safe page path — show innocuous content, never reveal destination
+    if (suspicious && cfg.suspicious_action === "safe_page") {
+      const uaInfoS = parseUA(a.ua);
+      await supabaseAdmin.from("clicks").insert({
+        link_id: link.id,
+        ip_address: ip || null,
+        country,
+        user_agent: a.ua || null,
+        referer: referer || null,
+        is_bot: true,
+        bot_reason: `safe:${suspicionReasons}`,
+        device: uaInfoS.device,
+        os: uaInfoS.os,
+        browser: uaInfoS.browser,
+        variant: null,
+      });
+      return {
+        found: true as const,
+        blocked: false as const,
+        safe: true as const,
+        message: cfg.safe_page_message,
+      };
+    }
 
     // Load active variants from DB
     const { data: variantRows } = await supabaseAdmin
@@ -171,12 +234,10 @@ const resolveLink = createServerFn({ method: "POST" })
 
     const variants: Variant[] = (variantRows ?? []).map(rowToVariant);
     if (variants.length === 0) {
-      // No content configured — bail out gracefully.
       return { found: false as const };
     }
     const slugs = variants.map((v) => v.slug);
 
-    // Admin override (per-link forced winner) takes precedence
     const { data: override } = await supabaseAdmin
       .from("link_variant_overrides")
       .select("variant_slug")
@@ -187,7 +248,6 @@ const resolveLink = createServerFn({ method: "POST" })
     if (override && slugs.includes(override.variant_slug)) {
       chosenSlug = override.variant_slug;
     } else {
-      // Bandit on REAL conversion (verify rows only)
       const { data: recent } = await supabaseAdmin
         .from("clicks")
         .select("variant,is_bot,bot_reason")
@@ -219,7 +279,7 @@ const resolveLink = createServerFn({ method: "POST" })
       user_agent: a.ua || null,
       referer: referer || null,
       is_bot: a.isBot,
-      bot_reason: a.reasons || null,
+      bot_reason: suspicionReasons || null,
       device: uaInfo.device,
       os: uaInfo.os,
       browser: uaInfo.browser,
@@ -238,6 +298,8 @@ const resolveLink = createServerFn({ method: "POST" })
 
     return {
       found: true as const,
+      blocked: false as const,
+      safe: false as const,
       linkId: link.id,
       variant: chosenVariant,
       preFlagBot: a.isBot,
