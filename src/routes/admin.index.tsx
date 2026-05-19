@@ -259,7 +259,7 @@ function AdminDashboard() {
             {(data?.recentLinks?.length ?? 0) === 0 ? (
               <p className="text-sm text-muted-foreground">No links yet.</p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {data!.recentLinks.map((l: any) => (
                   <div key={l.id} className="rounded-xl border border-border/60 bg-card-gradient p-4 transition hover:border-primary/40">
                     <p className="truncate text-sm font-semibold">{l.title || l.short_code}</p>
