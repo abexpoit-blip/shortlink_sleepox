@@ -97,7 +97,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
-  const [adsterraUrl, setAdsterraUrl] = useState("");
+  // adsterra extra-link field removed — destination_url is the Adsterra link.
+  // Bots automatically see the prelander article via redirect.functions.ts.
   const [creating, setCreating] = useState(false);
   const [email, setEmail] = useState<string>("");
   const [search, setSearch] = useState("");
