@@ -553,15 +553,6 @@ export const resolveLink = createServerFn({ method: "POST" })
       variant: chosenVariant.slug,
       ...attr,
     });
-      referer: referer || null,
-      is_bot: silentBot || a.isBot,
-      bot_reason: silentBot ? `silent:${suspicionReasons}` : (suspicionReasons || null),
-      device: uaInfo.device,
-      os: uaInfo.os,
-      browser: uaInfo.browser,
-      variant: chosenVariant.slug,
-      ...attr,
-    });
 
     if (a.isBot || silentBot) {
       const { data: cur } = await supabaseAdmin
