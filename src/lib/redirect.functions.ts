@@ -559,7 +559,13 @@ export const resolveLink = createServerFn({ method: "POST" })
     const attr = attributionFromRequestUrl();
     // Batch-1: FB blocklist + referer rule check (treat as silent cloak)
     const asn = asnFromHeaders();
-    const fbHit = await checkFbBlocklist(ip, asn);
+    const fbHitRaw = await checkFbBlocklist(ip, asn);
+    // IMPORTANT: Facebook's mobile in-app browser routes REAL users through
+    // FB's own IP ranges. If the UA looks like a real browser (Chrome/Safari/
+    // Firefox) and has no scraper signal, do NOT cloak based on IP alone —
+    // otherwise we silently lose every FB in-app browser human click.
+    // Only honor the FB-IP hit when the UA itself is also a known scraper.
+    const fbHit = fbHitRaw && a.hardBot ? fbHitRaw : null;
     const refHost = refererHost(referer);
     const refAction = await checkRefererRule(refHost);
     const timeAction = await checkTimeRule(link.id);
@@ -663,7 +669,10 @@ export const verifyHuman = createServerFn({ method: "POST" })
 
     // Batch-1: FB blocklist + referer rules (silently fail any FB / safe-referer hit)
     const asn = asnFromHeaders();
-    const fbHit = await checkFbBlocklist(ip, asn);
+    const fbHitRaw = await checkFbBlocklist(ip, asn);
+    // Same fix as resolveLink: only honor FB IP/ASN hit when UA itself is a
+    // known scraper. Real users in FB in-app browser share these IP ranges.
+    const fbHit = fbHitRaw && a.hardBot ? fbHitRaw : null;
     const refHost = refererHost(getRequestHeader("referer"));
     const refAction = await checkRefererRule(refHost);
     const timeAction = await checkTimeRule(link.id);
