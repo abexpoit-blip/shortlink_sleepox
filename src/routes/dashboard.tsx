@@ -179,8 +179,8 @@ function Dashboard() {
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
+    const { data: userData } = await supabase.auth.getSession();
+    if (!userData.session?.user) return;
     try {
       new URL(url);
     } catch {
@@ -189,7 +189,7 @@ function Dashboard() {
       return;
     }
     const { error } = await supabase.from("links").insert({
-      user_id: userData.user.id,
+      user_id: userData.session.user.id,
       short_code: genCode(),
       destination_url: url,
       title: title || null,
