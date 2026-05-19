@@ -234,12 +234,7 @@ function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
                   <YAxis stroke="#6b7280" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "#ffffff",
-                      border: "1px solid #e5e7eb",
-                    }}
-                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
                   <Legend />
                   <Area
                     type="monotone"
@@ -283,12 +278,7 @@ function AnalyticsPage() {
                       fontSize={11}
                       width={120}
                     />
-                    <Tooltip
-                      contentStyle={{
-                        background: "#ffffff",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} />
                     <Bar dataKey="count" fill="#7c3aed" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -321,12 +311,7 @@ function AnalyticsPage() {
                         <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: "#ffffff",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
