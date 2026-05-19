@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Shield, Zap, BarChart3, Bot, Sparkles, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { getIsAdmin } from "@/lib/admin-stats.functions";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search) => ({
@@ -30,7 +28,6 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
-  const checkAdmin = useServerFn(getIsAdmin);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,20 +37,9 @@ function LoginPage() {
   useEffect(() => {
     void (async () => {
       const { data } = await supabase.auth.getSession();
-      if (!data.session) return;
-      try {
-        const r = await checkAdmin();
-        if (r.isAdmin) {
-          // Admin must use the dedicated portal — never expose admin via /login.
-          await supabase.auth.signOut();
-          return;
-        }
-      } catch {
-        /* ignore */
-      }
-      navigate({ to: redirect });
+      if (data.session) navigate({ to: redirect });
     })();
-  }, [navigate, redirect, checkAdmin]);
+  }, [navigate, redirect]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -73,19 +59,7 @@ function LoginPage() {
       setErrorMessage(message);
       return toast.error(message);
     }
-    // Block admin accounts from using the public login.
-    try {
-      const r = await checkAdmin();
-      if (r.isAdmin) {
-        await supabase.auth.signOut();
-        setLoading(false);
-        const msg = "This account cannot sign in here.";
-        setErrorMessage(msg);
-        return toast.error(msg);
-      }
-    } catch {
-      /* if check fails, treat as normal user */
-    }
+    // Admin sign-in is handled at /control-panel only.
     toast.success("Welcome back!");
     navigate({ to: redirect });
   };
