@@ -565,7 +565,12 @@ export const resolveLink = createServerFn({ method: "POST" })
     const timeAction = await checkTimeRule(link.id);
     const refSafe = refAction === "safe" || refAction === "cloak";
     const timeSafe = timeAction === "safe" || timeAction === "cloak";
-    const silentBot = suspicious || Boolean(fbHit) || refSafe || timeSafe;
+    // Only silent-cloak when we have a STRONG bot signal. Soft score-based
+    // suspicion alone keeps the human path open — we'd rather risk one bot
+    // click reaching the offer than burn a real $0.50 FB ad click on the
+    // silent page. The client-side fingerprint check in verifyHuman is the
+    // safety net for borderline cases.
+    const silentBot = a.hardBot || Boolean(fbHit) || refSafe || timeSafe || targetingCheck.blocked;
     const defenseReasons = [
       suspicionReasons,
       fbHit || "",
