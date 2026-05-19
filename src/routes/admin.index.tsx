@@ -284,13 +284,13 @@ function AdminDashboard() {
 function KpiCard({ label, value, sub, icon: Icon, tone, loading }: { label: string; value: string | number; sub?: string; icon: any; tone: string; loading?: boolean }) {
   return (
     <Card className="border-border/60">
-      <CardContent className="p-5">
+      <CardContent className="p-3 sm:p-5">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-          <Icon className={`h-4 w-4 ${tone}`} />
+          <p className="truncate text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:text-xs">{label}</p>
+          <Icon className={`h-4 w-4 shrink-0 ${tone}`} />
         </div>
-        <p className="mt-2 font-display text-2xl font-bold tabular-nums">{loading ? "—" : value}</p>
-        {sub && <p className="mt-1 truncate text-xs text-muted-foreground">{sub}</p>}
+        <p className="mt-2 font-display text-lg font-bold tabular-nums sm:text-2xl">{loading ? "—" : value}</p>
+        {sub && <p className="mt-1 truncate text-[10px] text-muted-foreground sm:text-xs">{sub}</p>}
       </CardContent>
     </Card>
   );
