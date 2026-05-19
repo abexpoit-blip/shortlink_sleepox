@@ -72,10 +72,8 @@ export function AppSidebar({ email, isAdmin = false }: { email?: string; isAdmin
       <SidebarHeader className="border-b border-sidebar-border/60 px-4 py-5">
         <Link to="/" className="flex items-center gap-2.5 font-display font-bold">
           <div className="relative">
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary to-primary-glow blur-md opacity-60" />
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-glow overflow-hidden">
-              <img src="/favicon.png" alt="LinkShield" className="h-5 w-5" />
-            </div>
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary to-primary-glow blur-md opacity-50" />
+            <Logo className="relative h-8 w-8 drop-shadow-sm" />
           </div>
           {!collapsed && (
             <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent text-lg tracking-tight">
