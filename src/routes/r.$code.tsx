@@ -95,22 +95,6 @@ function collectFingerprint(metrics: {
   };
 }
 
-function SafePage({ message }: { message: string }) {
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto max-w-3xl px-6 py-5">
-          <span className="font-bold tracking-tight text-lg">Daily Reads</span>
-        </div>
-      </header>
-      <main className="mx-auto max-w-3xl px-6 py-20 text-center">
-        <h1 className="text-3xl font-bold mb-4">Article unavailable</h1>
-        <p className="text-muted-foreground">{message}</p>
-      </main>
-    </div>
-  );
-}
-
 function BlockedPage({ message }: { message: string }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-6">
@@ -127,10 +111,12 @@ function PreLanderPage() {
   const loaderData = Route.useLoaderData();
 
   if (loaderData.blocked) return <BlockedPage message={loaderData.message} />;
-  if (loaderData.safe) return <SafePage message={loaderData.message} />;
 
   const variant = loaderData.variant!;
-  return <PreLanderInner code={code} variant={variant} />;
+  // silentBot: render the same real article a human would see, but do NOT
+  // auto-verify or expose the destination. Looks like a legit page to FB
+  // ad-review crawlers — no "Article unavailable" giveaway.
+  return <PreLanderInner code={code} variant={variant} silent={Boolean(loaderData.silentBot)} />;
 }
 
 function PreLanderInner({ code, variant }: { code: string; variant: Variant }) {
