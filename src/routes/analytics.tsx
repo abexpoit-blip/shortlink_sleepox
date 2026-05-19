@@ -160,8 +160,8 @@ function AnalyticsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="icon" onClick={load} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <Button variant="outline" size="icon" onClick={load} disabled={loading} aria-label="Refresh analytics">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
             </Button>
             <Button variant="outline" size="sm" onClick={() => navigate({ to: "/funnel" })}>
               Cross-link funnel
