@@ -9,7 +9,6 @@ import {
   Trash2,
   Save,
   X,
-  Lock,
   GripVertical,
   ArrowUp,
   ArrowDown,
