@@ -255,6 +255,147 @@ function pickWeightedDestination(
   return active[active.length - 1].url;
 }
 
+// ---------- Batch-1 defense helpers: FB blocklist + referer rules + dup-clicks + geo/device destinations ----------
+
+function ipv4ToInt(ip: string): number | null {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (const p of parts) {
+    const v = parseInt(p, 10);
+    if (isNaN(v) || v < 0 || v > 255) return null;
+    n = (n * 256) + v;
+  }
+  return n;
+}
+function ipInCidr(ip: string, cidr: string): boolean {
+  const [base, bitsStr] = cidr.split("/");
+  const bits = parseInt(bitsStr, 10);
+  if (isNaN(bits) || bits < 0 || bits > 32) return false;
+  const ipN = ipv4ToInt(ip);
+  const baseN = ipv4ToInt(base);
+  if (ipN === null || baseN === null) return false;
+  if (bits === 0) return true;
+  const mask = (0xffffffff << (32 - bits)) >>> 0;
+  return (ipN & mask) === (baseN & mask);
+}
+
+async function checkFbBlocklist(ip: string, asn: number | null): Promise<string | null> {
+  if (!ip && !asn) return null;
+  const { data } = await supabaseAdmin
+    .from("fb_asn_blocklist")
+    .select("asn,ip_cidr,label")
+    .eq("is_active", true);
+  if (!data) return null;
+  for (const row of data) {
+    if (asn && row.asn === asn) return `fb-asn:${row.label}`;
+    if (ip && row.ip_cidr && ipInCidr(ip, row.ip_cidr)) return `fb-ip:${row.label}`;
+  }
+  return null;
+}
+
+async function checkRefererRule(host: string | null): Promise<"safe" | "cloak" | "pass" | null> {
+  if (!host) return null;
+  const { data } = await supabaseAdmin
+    .from("referer_rules")
+    .select("host_pattern,action,priority")
+    .eq("is_active", true)
+    .order("priority", { ascending: true });
+  if (!data) return null;
+  const h = host.toLowerCase();
+  for (const r of data) {
+    const pat = r.host_pattern.toLowerCase();
+    if (h === pat || h.endsWith(`.${pat}`) || h.includes(pat)) {
+      return r.action as "safe" | "cloak" | "pass";
+    }
+  }
+  return null;
+}
+
+async function pickGeoDeviceDestination(
+  linkId: string,
+  country: string | null,
+  device: string | null,
+  os: string | null,
+): Promise<string | null> {
+  // Geo first
+  if (country) {
+    const { data } = await supabaseAdmin
+      .from("link_geo_rules")
+      .select("adsterra_url,priority")
+      .eq("link_id", linkId)
+      .eq("country_code", country.toUpperCase())
+      .eq("is_active", true)
+      .order("priority", { ascending: true })
+      .limit(1);
+    if (data && data.length > 0) return data[0].adsterra_url;
+  }
+  // Device + OS
+  if (device) {
+    const { data } = await supabaseAdmin
+      .from("link_device_rules")
+      .select("adsterra_url,device,os,priority")
+      .eq("link_id", linkId)
+      .eq("is_active", true)
+      .in("device", [device.toLowerCase(), "any"])
+      .order("priority", { ascending: true });
+    if (data) {
+      const osLower = (os || "").toLowerCase();
+      // Prefer exact device+os match, then device+any, then any+any
+      const exact = data.find(r => r.device === device.toLowerCase() && r.os.toLowerCase() === osLower);
+      if (exact) return exact.adsterra_url;
+      const devAny = data.find(r => r.device === device.toLowerCase() && r.os === "any");
+      if (devAny) return devAny.adsterra_url;
+      const anyAny = data.find(r => r.device === "any" && r.os === "any");
+      if (anyAny) return anyAny.adsterra_url;
+    }
+  }
+  return null;
+}
+
+async function isDuplicateClick(
+  ip: string,
+  linkId: string,
+  windowMinutes: number,
+): Promise<boolean> {
+  if (!ip) return false;
+  const cutoff = new Date(Date.now() - windowMinutes * 60_000).toISOString();
+  const { data } = await supabaseAdmin
+    .from("duplicate_clicks")
+    .select("last_seen")
+    .eq("ip", ip)
+    .eq("link_id", linkId)
+    .gte("last_seen", cutoff)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+async function recordDuplicateClick(ip: string, linkId: string): Promise<void> {
+  if (!ip) return;
+  // Upsert: bump last_seen + hit_count
+  const { data: existing } = await supabaseAdmin
+    .from("duplicate_clicks")
+    .select("hit_count")
+    .eq("ip", ip)
+    .eq("link_id", linkId)
+    .maybeSingle();
+  if (existing) {
+    await supabaseAdmin.from("duplicate_clicks")
+      .update({ last_seen: new Date().toISOString(), hit_count: existing.hit_count + 1 })
+      .eq("ip", ip)
+      .eq("link_id", linkId);
+  } else {
+    await supabaseAdmin.from("duplicate_clicks")
+      .insert({ ip, link_id: linkId, hit_count: 1 });
+  }
+}
+
+function asnFromHeaders(): number | null {
+  const raw = getRequestHeader("cf-connecting-asn") || getRequestHeader("cf-asn") || "";
+  const n = parseInt(raw, 10);
+  return isNaN(n) || n <= 0 ? null : n;
+}
+
 // ---------- Server functions ----------
 
 export const resolveLink = createServerFn({ method: "POST" })
@@ -386,7 +527,18 @@ export const resolveLink = createServerFn({ method: "POST" })
 
     const uaInfo = parseUA(a.ua);
     const attr = attributionFromRequestUrl();
-    const silentBot = suspicious; // bots/targeting-blocked still get a real article, just no redirect
+    // Batch-1: FB blocklist + referer rule check (treat as silent cloak)
+    const asn = asnFromHeaders();
+    const fbHit = await checkFbBlocklist(ip, asn);
+    const refHost = refererHost(referer);
+    const refAction = await checkRefererRule(refHost);
+    const refSafe = refAction === "safe" || refAction === "cloak";
+    const silentBot = suspicious || Boolean(fbHit) || refSafe;
+    const defenseReasons = [
+      suspicionReasons,
+      fbHit || "",
+      refAction ? `referer:${refAction}:${refHost}` : "",
+    ].filter(Boolean).join(",");
     await supabaseAdmin.from("clicks").insert({
       link_id: link.id,
       ip_address: ip || null,
@@ -394,7 +546,7 @@ export const resolveLink = createServerFn({ method: "POST" })
       user_agent: a.ua || null,
       referer: referer || null,
       is_bot: silentBot || a.isBot,
-      bot_reason: silentBot ? `silent:${suspicionReasons}` : (suspicionReasons || null),
+      bot_reason: silentBot ? `silent:${defenseReasons}` : (defenseReasons || null),
       device: uaInfo.device,
       os: uaInfo.os,
       browser: uaInfo.browser,
@@ -463,7 +615,7 @@ export const verifyHuman = createServerFn({ method: "POST" })
 
     const { data: link } = await supabaseAdmin
       .from("links")
-      .select("id, destination_url, adsterra_direct_link, status, targeting")
+      .select("id, destination_url, adsterra_direct_link, status, targeting, duplicate_protection, duplicate_window_minutes")
       .eq("short_code", data.code)
       .maybeSingle();
 
@@ -471,13 +623,45 @@ export const verifyHuman = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "not-found" };
     }
 
+    // Batch-1: FB blocklist + referer rules (silently fail any FB / safe-referer hit)
+    const asn = asnFromHeaders();
+    const fbHit = await checkFbBlocklist(ip, asn);
+    const refHost = refererHost(getRequestHeader("referer"));
+    const refAction = await checkRefererRule(refHost);
+    if (fbHit || refAction === "safe" || refAction === "cloak") {
+      await supabaseAdmin.from("clicks").insert({
+        link_id: link.id,
+        ip_address: ip || null,
+        country: getRequestHeader("cf-ipcountry") || null,
+        user_agent: a.ua || null,
+        referer: getRequestHeader("referer") || null,
+        is_bot: true,
+        bot_reason: `verify-silent:${fbHit || ""}${refAction ? `|referer:${refAction}:${refHost}` : ""}`,
+        device: parseUA(a.ua).device,
+        os: parseUA(a.ua).os,
+        browser: parseUA(a.ua).browser,
+        variant: data.variant,
+      });
+      return { ok: false as const, reason: "blocklist" };
+    }
+
+    // Batch-1: Duplicate click protection
+    if (link.duplicate_protection) {
+      const dup = await isDuplicateClick(ip, link.id, link.duplicate_window_minutes ?? 30);
+      if (dup) {
+        await recordDuplicateClick(ip, link.id);
+        return { ok: false as const, reason: "duplicate" };
+      }
+    }
+
     // Re-check protection + targeting at verification time
     const cfg = await loadProtection();
     const rateHits = await ipExceedsRate(ip, cfg);
 
     const uaInfo2 = parseUA(a.ua);
+    const country = getRequestHeader("cf-ipcountry") || null;
     const targetingCheck2 = checkTargeting(link.targeting as Targeting | null, {
-      country: getRequestHeader("cf-ipcountry") || null,
+      country,
       device: uaInfo2.device,
       lang: primaryLang(a.acceptLang),
     });
@@ -511,10 +695,6 @@ export const verifyHuman = createServerFn({ method: "POST" })
       score += 30; reasons.push("mobile-no-touch");
     }
 
-    // Auto-redirect flow: real users no longer click "Continue", so
-    // zero interactions / sub-second time-on-page is the NORMAL human path.
-    // Keep as weak soft signals only — they stack with hard bot signals
-    // (webdriver, headless, canvas-blocked, cf-bot-score) but never block alone.
     const interactions = fp.mouse + fp.scroll + fp.key + fp.touch;
     if (interactions === 0) { score += 10; reasons.push("no-interaction"); }
     if (fp.timeOnPage < 100) { score += 10; reasons.push("too-fast"); }
@@ -529,7 +709,7 @@ export const verifyHuman = createServerFn({ method: "POST" })
     await supabaseAdmin.from("clicks").insert({
       link_id: link.id,
       ip_address: ip || null,
-      country: getRequestHeader("cf-ipcountry") || null,
+      country,
       user_agent: a.ua || null,
       referer: getRequestHeader("referer") || null,
       is_bot: isBot,
@@ -560,10 +740,19 @@ export const verifyHuman = createServerFn({ method: "POST" })
         .eq("id", link.id);
     }
 
-    // Final destination priority:
-    //   1) Per-link Adsterra direct link (monetize ad traffic)
-    //   2) Weighted rotator over link_destinations
-    //   3) Plain destination_url fallback
+    // Record this IP so subsequent quick re-clicks are deduped
+    if (link.duplicate_protection) {
+      await recordDuplicateClick(ip, link.id);
+    }
+
+    // Final destination priority (cascade):
+    //   1) Geo / device-OS specific Adsterra link (per-link rules)
+    //   2) Default Adsterra direct link on the link row
+    //   3) Weighted rotator over link_destinations
+    //   4) Plain destination_url fallback
+    const geoDev = await pickGeoDeviceDestination(link.id, country, uaInfo2.device, uaInfo2.os);
+    if (geoDev) return { ok: true as const, destination: geoDev };
+
     const { data: destRows } = await supabaseAdmin
       .from("link_destinations")
       .select("url,weight,is_active")
