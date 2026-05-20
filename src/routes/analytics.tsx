@@ -709,8 +709,8 @@ function RowLabel({ kind, value }: { kind?: string; value: string }) {
   if (kind === "country") {
     const cc = value.toUpperCase();
     return (
-      <span className="flex items-center gap-2 min-w-0">
-        <span className="text-lg leading-none">{countryFlag(cc)}</span>
+      <span className="flex items-center gap-2.5 min-w-0">
+        <CountryFlag cc={cc} />
         <span className="font-mono text-xs font-bold uppercase tracking-wider">{cc}</span>
         <span className="truncate text-xs text-muted-foreground">{COUNTRY_NAMES[cc] ?? ""}</span>
       </span>
@@ -729,6 +729,15 @@ function RowLabel({ kind, value }: { kind?: string; value: string }) {
       <span className="flex items-center gap-2 min-w-0">
         <BrowserLogo name={value} />
         <span className="truncate font-medium capitalize">{value}</span>
+      </span>
+    );
+  }
+  if (kind === "referrer") {
+    const label = value === "direct" ? "Direct" : value;
+    return (
+      <span className="flex items-center gap-2 min-w-0">
+        <ReferrerFavicon host={value} />
+        <span className="truncate font-medium">{label}</span>
       </span>
     );
   }
