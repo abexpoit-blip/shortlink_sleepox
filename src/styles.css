@@ -250,8 +250,8 @@
     border-radius: 9999px;
     background: radial-gradient(
       circle,
-      oklch(0.7 0.22 295 / 55%) 0%,
-      oklch(0.65 0.2 260 / 35%) 35%,
+      oklch(0.75 0.18 225 / 55%) 0%,
+      oklch(0.70 0.16 210 / 35%) 35%,
       transparent 70%
     );
     filter: blur(14px);
