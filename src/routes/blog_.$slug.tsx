@@ -58,15 +58,12 @@ export const Route = createFileRoute("/blog_/$slug")({
         },
         {
           type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: "https://sleepox.com/" },
-              { "@type": "ListItem", position: 2, name: "Blog", item: "https://sleepox.com/blog" },
-              { "@type": "ListItem", position: 3, name: post.title, item: url },
-            ],
-          }),
+          children: JSON.stringify(
+            buildBreadcrumbSchema([
+              { label: "Blog", to: "/blog" },
+              { label: post.title, to: `/blog/${post.slug}` },
+            ]),
+          ),
         },
       ],
     };
