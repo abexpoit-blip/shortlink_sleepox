@@ -642,14 +642,39 @@ function Dashboard() {
                   </div>
                 </div>
               </div>
-                            );
-                          })
-                        )}
-                      </div>
+
+              {/* Create link */}
+              <div className="relative overflow-hidden rounded-2xl border border-border bg-card-gradient shadow-card">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+                <div className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="font-display text-base font-semibold">Create new short link</h2>
+                      <p className="text-xs text-muted-foreground">Cloaked, geo-aware, bot-filtered out of the box.</p>
                     </div>
-                  );
-                })}
+                    <div className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3 text-success" />
+                      Auto bot filter on
+                    </div>
+                  </div>
+                  <form onSubmit={create} className="mt-4 grid gap-2 md:grid-cols-[1fr_220px_auto]">
+                    <div className="relative">
+                      <Label htmlFor="url" className="sr-only">Destination URL</Label>
+                      <Link2 className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input id="url" placeholder="https://your-adsterra-direct-link..." required value={url} onChange={(e) => setUrl(e.target.value)} className="pl-9" />
+                    </div>
+                    <div>
+                      <Label htmlFor="title" className="sr-only">Title</Label>
+                      <Input id="title" placeholder="Title (optional)" value={title} onChange={(e) => setTitle(e.target.value)} />
+                    </div>
+                    <Button type="submit" disabled={creating} className="gap-1.5 shadow-glow">
+                      <Plus className="h-4 w-4" /> {creating ? "Creating..." : "Create link"}
+                    </Button>
+                  </form>
+                </div>
               </div>
+
+
 
               {/* Links table */}
               <div className="relative overflow-hidden rounded-2xl border border-border bg-card-gradient shadow-card">
