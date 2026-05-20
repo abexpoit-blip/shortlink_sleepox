@@ -2,6 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Shield, Check, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FaqSection, PRICING_FAQ, buildFaqSchema } from "@/components/faq-section";
+import { Breadcrumbs, buildBreadcrumbSchema } from "@/components/breadcrumbs";
+
+const PRICING_CRUMBS = [{ label: "Pricing" }];
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -18,6 +21,10 @@ export const Route = createFileRoute("/pricing")({
       {
         type: "application/ld+json",
         children: JSON.stringify(buildFaqSchema(PRICING_FAQ)),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(buildBreadcrumbSchema(PRICING_CRUMBS)),
       },
     ],
   }),
@@ -69,6 +76,7 @@ function PricingPage() {
 
       <section className="bg-hero">
         <div className="mx-auto max-w-3xl px-6 py-20 text-center">
+          <Breadcrumbs items={PRICING_CRUMBS} className="mb-6 justify-center" />
           <h1 className="text-4xl font-bold md:text-5xl">Simple, transparent pricing</h1>
           <p className="mt-4 text-muted-foreground">Pick the plan that fits your ad volume. Upgrade or cancel anytime.</p>
         </div>

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Shield, Bot, BarChart3 } from "lucide-react";
 import { PlatformLanding } from "@/components/platform-landing";
 import { buildFaqSchema, type FaqItem } from "@/components/faq-section";
+import { buildBreadcrumbSchema } from "@/components/breadcrumbs";
 
 const FAQ: FaqItem[] = [
   {
@@ -52,6 +53,7 @@ export const Route = createFileRoute("/instagram-ads")({
     links: [{ rel: "canonical", href: "https://sleepox.com/instagram-ads" }],
     scripts: [
       { type: "application/ld+json", children: JSON.stringify(buildFaqSchema(FAQ)) },
+      { type: "application/ld+json", children: JSON.stringify(buildBreadcrumbSchema([{ label: "Instagram Ads" }])) },
     ],
   }),
   component: Page,
