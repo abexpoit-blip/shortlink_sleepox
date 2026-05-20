@@ -629,19 +629,17 @@ function Dashboard() {
                         .filter((r) => (r.key ?? "").toLowerCase() !== "bot" && (r.key ?? "").toLowerCase() !== "unknown")
                         .slice(0, 6)
                         .map((row, i) => {
-                          const Icon = getBrandIcon(row.key);
                           const osRow = (analytics?.byOS ?? []).filter((r) => (r.key ?? "").toLowerCase() !== "bot" && (r.key ?? "").toLowerCase() !== "unknown")[i % Math.max(1, (analytics?.byOS?.length ?? 1))];
-                          const OsIcon = osRow ? getBrandIcon(osRow.key) : Activity;
                           const mins = i * 7 + 2;
                           return (
-                            <div key={row.key} className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-accent/20">
+                            <div key={row.key} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-accent/20">
                               <span className="font-mono text-[10px] text-muted-foreground w-10">
                                 {mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h`}
                               </span>
-                              <Icon className="h-4 w-4 shrink-0" />
+                              <BrandBadge name={row.key} />
                               <span className="text-sm font-medium flex-1 truncate">{prettyLabel(row.key)}</span>
-                              <OsIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                              <span className="text-[11px] text-muted-foreground w-16 text-right">{prettyLabel(osRow?.key ?? "—")}</span>
+                              {osRow ? <BrandBadge name={osRow.key} /> : <span className="h-5 w-5" />}
+                              <span className="text-[11px] text-muted-foreground w-16 text-right truncate">{prettyLabel(osRow?.key ?? "—")}</span>
                               <span className="font-mono text-xs font-semibold text-success w-12 text-right">{row.humans}</span>
                             </div>
                           );
