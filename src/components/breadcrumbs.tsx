@@ -12,7 +12,11 @@ export type BreadcrumbProps = {
   className?: string;
 };
 
-const BASE_URL = "https://sleepox.com";
+function getBaseUrl(): string {
+  if (typeof window !== "undefined") return window.location.origin;
+  return process.env.BASE_URL || "https://sleepox.com";
+}
+
 
 /** Visual breadcrumb trail. Always includes "Home" as the first crumb. */
 export function Breadcrumbs({ items, className = "" }: BreadcrumbProps) {
