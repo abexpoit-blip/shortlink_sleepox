@@ -158,6 +158,9 @@ const CountrySchema = z.object({
   country: z.string().min(2).max(2),
   days: z.number().int().min(1).max(90).default(7),
   linkId: z.string().uuid().optional().nullable(),
+  device: z.string().min(1).max(40).optional().nullable(),
+  browser: z.string().min(1).max(60).optional().nullable(),
+  os: z.string().min(1).max(60).optional().nullable(),
 });
 
 export const getCountryDrilldown = createServerFn({ method: "POST" })
