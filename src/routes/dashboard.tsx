@@ -50,7 +50,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { getAnalytics, getCountryDrilldown, getAdRejectDiagnostics } from "@/lib/analytics.functions";
-import { getBrandIcon, prettyLabel } from "@/components/brand-icons";
+import {
+  getBrandIcon,
+  prettyLabel,
+  BrandBadge,
+  CountryFlag,
+  ReferrerFavicon,
+  COUNTRY_NAMES,
+  prettyReferrer,
+} from "@/components/brand-icons";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
