@@ -1375,7 +1375,10 @@ function Dashboard() {
                         <SelectItem value="__all__">All {f.label}s</SelectItem>
                         {f.opts.map((o) => (
                           <SelectItem key={o.key} value={o.key}>
-                            {prettyLabel(o.key)} <span className="text-muted-foreground">({o.total})</span>
+                            <span className="inline-flex items-center gap-2">
+                              <BrandBadge name={o.key} />
+                              {prettyLabel(o.key)} <span className="text-muted-foreground">({o.total})</span>
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
