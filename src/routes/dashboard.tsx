@@ -1265,8 +1265,9 @@ function Dashboard() {
             ) : (
               <div className="space-y-1.5">
                 {links.map((l) => {
-                  const total = l.clicks_count + l.bot_clicks_count;
-                  const cleanPct = total > 0 ? (l.clicks_count / total) * 100 : 100;
+                  const s = getLinkStats(l.id);
+                  const total = s.humans + s.bots;
+                  const cleanPct = total > 0 ? (s.humans / total) * 100 : 100;
                   return (
                     <button
                       key={l.id}
