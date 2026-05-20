@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Shield, Zap, BarChart3, Bot, Globe, Lock, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
+import { FaqSection, HOMEPAGE_FAQ, buildFaqSchema } from "@/components/faq-section";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,6 +29,12 @@ export const Route = createFileRoute("/")({
       { name: "twitter:description", content: "Short links built for Facebook, Instagram, TikTok & Google Ads — block bots, boost CTR." },
     ],
     links: [{ rel: "canonical", href: "https://sleepox.com/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(buildFaqSchema(HOMEPAGE_FAQ)),
+      },
+    ],
   }),
 
   component: LandingPage,
@@ -155,6 +162,13 @@ function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* FAQ */}
+      <FaqSection
+        title="Frequently asked questions"
+        subtitle="Everything you need to know about LinkShield and how it protects your ads."
+        items={HOMEPAGE_FAQ}
+      />
 
       {/* CTA */}
       <section className="mx-auto max-w-5xl px-6 py-24">

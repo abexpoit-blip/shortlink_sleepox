@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Shield, Check, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FaqSection, PRICING_FAQ, buildFaqSchema } from "@/components/faq-section";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -13,6 +14,12 @@ export const Route = createFileRoute("/pricing")({
       { property: "og:url", content: "https://sleepox.com/pricing" },
     ],
     links: [{ rel: "canonical", href: "https://sleepox.com/pricing" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(buildFaqSchema(PRICING_FAQ)),
+      },
+    ],
   }),
 
   component: PricingPage,
@@ -104,6 +111,13 @@ function PricingPage() {
           ))}
         </div>
       </section>
+
+      {/* FAQ */}
+      <FaqSection
+        title="Pricing FAQ"
+        subtitle="Common questions about plans, billing, and upgrades."
+        items={PRICING_FAQ}
+      />
     </div>
   );
 }
