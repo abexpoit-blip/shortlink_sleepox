@@ -114,6 +114,10 @@ function Dashboard() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [linksDialogOpen, setLinksDialogOpen] = useState(false);
+  const fetchCountry = useServerFn(getCountryDrilldown);
+  const [countryDrill, setCountryDrill] = useState<Awaited<ReturnType<typeof getCountryDrilldown>> | null>(null);
+  const [countryDrillCode, setCountryDrillCode] = useState<string | null>(null);
+  const [countryDrillLoading, setCountryDrillLoading] = useState(false);
   const navigate = useNavigate();
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
