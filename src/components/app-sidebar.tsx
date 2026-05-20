@@ -155,11 +155,11 @@ export function AppSidebar({ email, isAdmin = false }: { email?: string; isAdmin
           </div>
         )}
 
-        {/* ExpoIT Dev Credit */}
+        {/* Dev Credit */}
         {!collapsed && (
           <div className="mx-2 mt-2 flex justify-center">
             <span className="inline-block rounded-full bg-gradient-to-r from-sky-500 via-cyan-500 to-blue-600 px-2.5 py-0.5 text-[9px] font-bold tracking-wider text-white shadow-glow">
-              Developed by ExpoIT
+              Developed by Sleepox LLC
             </span>
           </div>
         )}
