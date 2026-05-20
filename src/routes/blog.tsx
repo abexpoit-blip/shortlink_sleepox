@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { BLOG_POSTS } from "@/lib/blog-posts";
+import { Breadcrumbs, buildBreadcrumbSchema } from "@/components/breadcrumbs";
 
 export const Route = createFileRoute("/blog")({
   head: () => ({
