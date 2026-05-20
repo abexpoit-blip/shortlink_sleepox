@@ -118,6 +118,9 @@ function Dashboard() {
   const [countryDrill, setCountryDrill] = useState<Awaited<ReturnType<typeof getCountryDrilldown>> | null>(null);
   const [countryDrillCode, setCountryDrillCode] = useState<string | null>(null);
   const [countryDrillLoading, setCountryDrillLoading] = useState(false);
+  const fetchDiag = useServerFn(getAdRejectDiagnostics);
+  const [diag, setDiag] = useState<Awaited<ReturnType<typeof getAdRejectDiagnostics>> | null>(null);
+  const [diagLoading, setDiagLoading] = useState(true);
   const navigate = useNavigate();
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
