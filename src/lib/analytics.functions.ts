@@ -178,7 +178,7 @@ export const getCountryDrilldown = createServerFn({ method: "POST" })
       return {
         country: data.country,
         totals: { total: 0, humans: 0, bots: 0, ctr: 0 },
-        byDevice: [], byBrowser: [], byOS: [], byLink: [], timeseries: [],
+        byDevice: [], byBrowser: [], byOS: [], byReferrer: [], byLink: [], timeseries: [],
         options: { devices: [], browsers: [], os: [] },
         appliedFilters: { device: data.device ?? null, browser: data.browser ?? null, os: data.os ?? null },
       };
