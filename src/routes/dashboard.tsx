@@ -1290,11 +1290,11 @@ function Dashboard() {
                         <div className="flex items-center gap-4 text-right">
                           <div>
                             <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Real</div>
-                            <div className="font-mono text-sm font-bold text-success">{l.clicks_count}</div>
+                            <div className="font-mono text-sm font-bold text-success">{s.humans}</div>
                           </div>
                           <div>
                             <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Bots</div>
-                            <div className="font-mono text-sm font-bold text-destructive">{l.bot_clicks_count}</div>
+                            <div className="font-mono text-sm font-bold text-destructive">{s.bots}</div>
                           </div>
                           <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                         </div>
