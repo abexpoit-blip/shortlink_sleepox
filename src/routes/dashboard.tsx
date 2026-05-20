@@ -1181,7 +1181,7 @@ function Dashboard() {
                                 Bots
                               </div>
                               <div className="font-mono text-sm font-bold text-destructive">
-                                {l.bot_clicks_count}
+                                {s.bots}
                               </div>
                             </div>
                           </div>
