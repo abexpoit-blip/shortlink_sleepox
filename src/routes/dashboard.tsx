@@ -159,6 +159,12 @@ function Dashboard() {
         toast.error(msg);
       })
       .finally(() => setAnalyticsLoading(false));
+
+    setDiagLoading(true);
+    void fetchDiag({ data: { days, linkId: null } })
+      .then((res) => setDiag(res))
+      .catch(() => setDiag(null))
+      .finally(() => setDiagLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, refreshTick]);
 
